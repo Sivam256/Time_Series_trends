@@ -14,5 +14,5 @@ Formulas used:
 
     S^k = wk - d^-1∑wi, where summation from i=1 to d
 
-Then the points are plotted in graph to show visualizations.
+Then the points are plotted in graph using matplotlib.pyplot to show visualizations.
 
