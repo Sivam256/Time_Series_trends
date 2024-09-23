@@ -1,48 +1,56 @@
-import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
-from statsmodels.tsa.seasonal import seasonal_decompose
 
-def load_dataset(file_path):
-    df = pd.read_csv(file_path)
-    
-    df.columns = df.columns.str.lower()  
-    date_column = df.columns[0]  
-    value_column = df.columns[1]  
-    df[date_column] = pd.to_datetime(df[date_column])
-    df.set_index(date_column, inplace=True)
+#Enter TS DATA
+time_series = np.array([0,4,8,7,3,1,5,8,15,13,13,10,8,12,15,18,23,20,17,15,19,22,25,29,27,24,22,26,29])
 
-    return df[[value_column]]
+q = int(input("Enter value of q: "))
 
-def plot_trend_seasonality(df, period):
-    decomposition = seasonal_decompose(df, model='additive', period=period)
-    
-    plt.figure(figsize=(10, 8))
-    
-    plt.subplot(411)
-    plt.plot(df, label='Original Data')
-    plt.legend(loc='upper left')
+n = len(time_series)
+Tline = np.zeros(n)
 
-    plt.subplot(412)
-    plt.plot(decomposition.trend, label='Trend', color='orange')
-    plt.legend(loc='upper left')
+#Calc Mk values
+#Odd
+if len(time_series) % 2 == 1:
+    for i in range(q, n - q):
+        Tline[i] = np.mean(time_series[i - q:i + q + 1])
+#Even
+else:
+    d = 2 * q
+    for i in range(q, n - q):
+        Tline[i] = (0.5 * time_series[i - q] + np.sum(time_series[i - q + 1:i + q]) + 0.5 * time_series[i + q]) / d
 
-    plt.subplot(413)
-    plt.plot(decomposition.seasonal, label='Seasonality', color='green')
-    plt.legend(loc='upper left')
 
-    plt.subplot(414)
-    plt.plot(decomposition.resid, label='Residuals', color='red')
-    plt.legend(loc='upper left')
-    
-    plt.tight_layout()
-    plt.show()
+seasonal_effect = np.zeros(n)
+for i in range(n):
+    sum_diff = 0
+    count = 0
+    for j in range(-(n // q), n // q):
+        if 0 <= i + j * q < n:
+            sum_diff += time_series[i + j * q] - Tline[i + j * q]
+            count += 1
+    if count > 0:
+        seasonal_effect[i] = sum_diff / count
 
-file_path = "C:/Users/Admin/Downloads/winequality-red.csv"
+avg_seasonality = np.mean(seasonal_effect)
+adjusted_seasonal = seasonal_effect - avg_seasonality
 
-df = load_dataset(file_path)
+print("Calculated Trend:", Tline)
+print("Extracted Seasonality:", adjusted_seasonal)
 
-# Ask user for period of seasonality (e.g., 12 for monthly data over a year)
-period = int(input("Enter the period for seasonality (e.g., 12 for monthly data with yearly seasonality): "))
+plt.figure(figsize=(10, 6))
 
-# Plot trend and seasonality
-plot_trend_seasonality(df, period)
+plt.subplot(311)
+plt.plot(time_series, label="Original Data")
+plt.legend(loc='upper left')
+
+plt.subplot(312)
+plt.plot(Tline, label="Trend", color='orange')
+plt.legend(loc='upper left')
+
+plt.subplot(313)
+plt.plot(adjusted_seasonal, label="Seasonality", color='green')
+plt.legend(loc='upper left')
+
+plt.tight_layout()
+plt.show()
